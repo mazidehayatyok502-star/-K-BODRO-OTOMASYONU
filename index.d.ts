@@ -1,8 +1,3 @@
-type AllPossibleTypedArrays = typeof import('possible-typed-array-names');
-
-declare function availableTypedArrays():
-    | []
-    | AllPossibleTypedArrays
-    | Omit<AllPossibleTypedArrays, 'BigInt64Array' | 'BigUint64Array'>;
-
-export = availableTypedArrays;
+export function byteLength(b64: string): number;
+export function toByteArray(b64: string): Uint8Array;
+export function fromByteArray(uint8: Uint8Array): string;

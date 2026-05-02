@@ -1,55 +1,34 @@
-# available-typed-arrays <sup>[![Version Badge][2]][1]</sup>
+base64-js
+=========
 
-[![github actions][actions-image]][actions-url]
-[![coverage][codecov-image]][codecov-url]
-[![dependency status][5]][6]
-[![dev dependency status][7]][8]
-[![License][license-image]][license-url]
-[![Downloads][downloads-image]][downloads-url]
+`base64-js` does basic base64 encoding/decoding in pure JS.
 
-[![npm badge][11]][1]
+[![build status](https://secure.travis-ci.org/beatgammit/base64-js.png)](http://travis-ci.org/beatgammit/base64-js)
 
-Returns an array of Typed Array names that are available in the current environment.
+Many browsers already have base64 encoding/decoding functionality, but it is for text data, not all-purpose binary data.
 
-## Example
+Sometimes encoding/decoding binary data in the browser is useful, and that is what this module does.
 
-```js
-var availableTypedArrays = require('available-typed-arrays');
-var assert = require('assert');
+## install
 
-assert.deepStrictEqual(
-	availableTypedArrays().sort(),
-	[
-		'Int8Array',
-		'Uint8Array',
-		'Uint8ClampedArray',
-		'Int16Array',
-		'Uint16Array',
-		'Int32Array',
-		'Uint32Array',
-		'Float32Array',
-		'Float64Array',
-		'BigInt64Array',
-		'BigUint64Array'
-	].sort()
-);
-```
+With [npm](https://npmjs.org) do:
 
-## Tests
-Simply clone the repo, `npm install`, and run `npm test`
+`npm install base64-js` and `var base64js = require('base64-js')`
 
-[1]: https://npmjs.org/package/available-typed-arrays
-[2]: https://versionbadg.es/inspect-js/available-typed-arrays.svg
-[5]: https://david-dm.org/inspect-js/available-typed-arrays.svg
-[6]: https://david-dm.org/inspect-js/available-typed-arrays
-[7]: https://david-dm.org/inspect-js/available-typed-arrays/dev-status.svg
-[8]: https://david-dm.org/inspect-js/available-typed-arrays#info=devDependencies
-[11]: https://nodei.co/npm/available-typed-arrays.png?downloads=true&stars=true
-[license-image]: https://img.shields.io/npm/l/available-typed-arrays.svg
-[license-url]: LICENSE
-[downloads-image]: https://img.shields.io/npm/dm/available-typed-arrays.svg
-[downloads-url]: https://npm-stat.com/charts.html?package=available-typed-arrays
-[codecov-image]: https://codecov.io/gh/inspect-js/available-typed-arrays/branch/main/graphs/badge.svg
-[codecov-url]: https://app.codecov.io/gh/inspect-js/available-typed-arrays/
-[actions-image]: https://img.shields.io/endpoint?url=https://github-actions-badge-u3jn4tfpocch.runkit.sh/inspect-js/available-typed-arrays
-[actions-url]: https://github.com/inspect-js/available-typed-arrays/actions
+For use in web browsers do:
+
+`<script src="base64js.min.js"></script>`
+
+[Get supported base64-js with the Tidelift Subscription](https://tidelift.com/subscription/pkg/npm-base64-js?utm_source=npm-base64-js&utm_medium=referral&utm_campaign=readme)
+
+## methods
+
+`base64js` has three exposed functions, `byteLength`, `toByteArray` and `fromByteArray`, which both take a single argument.
+
+* `byteLength` - Takes a base64 string and returns length of byte array
+* `toByteArray` - Takes a base64 string and returns a byte array
+* `fromByteArray` - Takes a byte array and returns a base64 string
+
+## license
+
+MIT
