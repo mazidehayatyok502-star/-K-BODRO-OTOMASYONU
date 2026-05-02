@@ -1,18 +1,17 @@
+sudo: false
+arch:
+ - amd64
+ - ppc64le
 language: node_js
-
 node_js:
-  - 0.10
-  - 0.12
-  - 4
-  - 6
-
-before_script: npm -g install testjs
-
-env:
-  - CXX=g++-4.8
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - g++-4.8
+  - '6'
+  - '8'
+  - '10'
+  - '12'
+  - '14'
+  - '15'
+  - lts/*
+notifications:
+  email:
+    - rod@vagg.org
+    - matteo.collina@gmail.com
