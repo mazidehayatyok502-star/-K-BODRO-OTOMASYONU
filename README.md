@@ -1,65 +1,60 @@
-# @gar/promisify
+# @npmcli/fs
 
-### Promisify an entire object or class instance
+polyfills, and extensions, of the core `fs` module.
 
-This module leverages es6 Proxy and Reflect to promisify every function in an
-object or class instance.
+## Features
 
-It assumes the callback that the function is expecting is the last
-parameter, and that it is an error-first callback with only one value,
-i.e. `(err, value) => ...`. This mirrors node's `util.promisify` method.
+- all exposed functions return promises
+- `fs.rm` polyfill for node versions < 14.14.0
+- `fs.mkdir` polyfill adding support for the `recursive` and `force` options in node versions < 10.12.0
+- `fs.copyFile` extended to accept an `owner` option
+- `fs.mkdir` extended to accept an `owner` option
+- `fs.mkdtemp` extended to accept an `owner` option
+- `fs.writeFile` extended to accept an `owner` option
+- `fs.withTempDir` added
+- `fs.cp` polyfill for node < 16.7.0
 
-In order that you can use it as a one-stop-shop for all your promisify
-needs, you can also pass it a function.  That function will be
-promisified as normal using node's built-in `util.promisify` method.
+## The `owner` option
 
-[node's custom promisified
-functions](https://nodejs.org/api/util.html#util_custom_promisified_functions)
-will also be mirrored, further allowing this to be a drop-in replacement
-for the built-in `util.promisify`.
+The `copyFile`, `mkdir`, `mkdtemp`, `writeFile`, and `withTempDir` functions
+all accept a new `owner` property in their options. It can be used in two ways:
 
-### Examples
+- `{ owner: { uid: 100, gid: 100 } }` - set the `uid` and `gid` explicitly
+- `{ owner: 100 }` - use one value, will set both `uid` and `gid` the same
 
-Promisify an entire object
+The special string `'inherit'` may be passed instead of a number, which will
+cause this module to automatically determine the correct `uid` and/or `gid`
+from the nearest existing parent directory of the target.
 
-```javascript
+## `fs.withTempDir(root, fn, options) -> Promise`
 
-const promisify = require('@gar/promisify')
+### Parameters
 
-class Foo {
-  constructor (attr) {
-    this.attr = attr
-  }
+- `root`: the directory in which to create the temporary directory
+- `fn`: a function that will be called with the path to the temporary directory
+- `options`
+  - `tmpPrefix`: a prefix to be used in the generated directory name
 
-  double (input, cb) {
-    cb(null, input * 2)
-  }
+### Usage
 
-const foo = new Foo('baz')
-const promisified = promisify(foo)
+The `withTempDir` function creates a temporary directory, runs the provided
+function (`fn`), then removes the temporary directory and resolves or rejects
+based on the result of `fn`.
 
-console.log(promisified.attr)
-console.log(await promisified.double(1024))
-```
+```js
+const fs = require('@npmcli/fs')
+const os = require('os')
 
-Promisify a function
-
-```javascript
-
-const promisify = require('@gar/promisify')
-
-function foo (a, cb) {
-  if (a !== 'bad') {
-    return cb(null, 'ok')
-  }
-  return cb('not ok')
+// this function will be called with the full path to the temporary directory
+// it is called with `await` behind the scenes, so can be async if desired.
+const myFunction = async (tempPath) => {
+  return 'done!'
 }
 
-const promisified = promisify(foo)
+const main = async () => {
+  const result = await fs.withTempDir(os.tmpdir(), myFunction)
+  // result === 'done!'
+}
 
-// This will resolve to 'ok'
-promisified('good')
-
-// this will reject
-promisified('bad')
+main()
 ```
