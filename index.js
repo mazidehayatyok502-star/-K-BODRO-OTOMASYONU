@@ -1,14 +1,17 @@
 'use strict';
 
-var callBound = require('call-bound');
-var $byteLength = callBound('ArrayBuffer.prototype.byteLength', true);
+var possibleNames = require('possible-typed-array-names');
 
-var isArrayBuffer = require('is-array-buffer');
+var g = typeof globalThis === 'undefined' ? global : globalThis;
 
 /** @type {import('.')} */
-module.exports = function byteLength(ab) {
-	if (!isArrayBuffer(ab)) {
-		return NaN;
+module.exports = function availableTypedArrays() {
+	var /** @type {ReturnType<typeof availableTypedArrays>} */ out = [];
+	for (var i = 0; i < possibleNames.length; i++) {
+		if (typeof g[possibleNames[i]] === 'function') {
+			// @ts-expect-error
+			out[out.length] = possibleNames[i];
+		}
 	}
-	return $byteLength ? $byteLength(ab) : ab.byteLength;
-}; // in node < 0.11, byteLength is an own nonconfigurable property
+	return out;
+};

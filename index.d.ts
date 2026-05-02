@@ -1,4 +1,8 @@
-declare function arrayBufferByteLength(buffer: ArrayBuffer): number;
-declare function arrayBufferByteLength(buffer: unknown): typeof NaN;
+type AllPossibleTypedArrays = typeof import('possible-typed-array-names');
 
-export = arrayBufferByteLength;
+declare function availableTypedArrays():
+    | []
+    | AllPossibleTypedArrays
+    | Omit<AllPossibleTypedArrays, 'BigInt64Array' | 'BigUint64Array'>;
+
+export = availableTypedArrays;

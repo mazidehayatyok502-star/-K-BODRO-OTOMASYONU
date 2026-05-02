@@ -1,43 +1,55 @@
-# Array Flatten
+# available-typed-arrays <sup>[![Version Badge][2]][1]</sup>
 
-[![NPM version][npm-image]][npm-url]
-[![NPM downloads][downloads-image]][downloads-url]
-[![Build status][travis-image]][travis-url]
-[![Test coverage][coveralls-image]][coveralls-url]
+[![github actions][actions-image]][actions-url]
+[![coverage][codecov-image]][codecov-url]
+[![dependency status][5]][6]
+[![dev dependency status][7]][8]
+[![License][license-image]][license-url]
+[![Downloads][downloads-image]][downloads-url]
 
-> Flatten an array of nested arrays into a single flat array. Accepts an optional depth.
+[![npm badge][11]][1]
 
-## Installation
+Returns an array of Typed Array names that are available in the current environment.
 
+## Example
+
+```js
+var availableTypedArrays = require('available-typed-arrays');
+var assert = require('assert');
+
+assert.deepStrictEqual(
+	availableTypedArrays().sort(),
+	[
+		'Int8Array',
+		'Uint8Array',
+		'Uint8ClampedArray',
+		'Int16Array',
+		'Uint16Array',
+		'Int32Array',
+		'Uint32Array',
+		'Float32Array',
+		'Float64Array',
+		'BigInt64Array',
+		'BigUint64Array'
+	].sort()
+);
 ```
-npm install array-flatten --save
-```
 
-## Usage
+## Tests
+Simply clone the repo, `npm install`, and run `npm test`
 
-```javascript
-var flatten = require('array-flatten')
-
-flatten([1, [2, [3, [4, [5], 6], 7], 8], 9])
-//=> [1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-flatten([1, [2, [3, [4, [5], 6], 7], 8], 9], 2)
-//=> [1, 2, 3, [4, [5], 6], 7, 8, 9]
-
-(function () {
-  flatten(arguments) //=> [1, 2, 3]
-})(1, [2, 3])
-```
-
-## License
-
-MIT
-
-[npm-image]: https://img.shields.io/npm/v/array-flatten.svg?style=flat
-[npm-url]: https://npmjs.org/package/array-flatten
-[downloads-image]: https://img.shields.io/npm/dm/array-flatten.svg?style=flat
-[downloads-url]: https://npmjs.org/package/array-flatten
-[travis-image]: https://img.shields.io/travis/blakeembrey/array-flatten.svg?style=flat
-[travis-url]: https://travis-ci.org/blakeembrey/array-flatten
-[coveralls-image]: https://img.shields.io/coveralls/blakeembrey/array-flatten.svg?style=flat
-[coveralls-url]: https://coveralls.io/r/blakeembrey/array-flatten?branch=master
+[1]: https://npmjs.org/package/available-typed-arrays
+[2]: https://versionbadg.es/inspect-js/available-typed-arrays.svg
+[5]: https://david-dm.org/inspect-js/available-typed-arrays.svg
+[6]: https://david-dm.org/inspect-js/available-typed-arrays
+[7]: https://david-dm.org/inspect-js/available-typed-arrays/dev-status.svg
+[8]: https://david-dm.org/inspect-js/available-typed-arrays#info=devDependencies
+[11]: https://nodei.co/npm/available-typed-arrays.png?downloads=true&stars=true
+[license-image]: https://img.shields.io/npm/l/available-typed-arrays.svg
+[license-url]: LICENSE
+[downloads-image]: https://img.shields.io/npm/dm/available-typed-arrays.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=available-typed-arrays
+[codecov-image]: https://codecov.io/gh/inspect-js/available-typed-arrays/branch/main/graphs/badge.svg
+[codecov-url]: https://app.codecov.io/gh/inspect-js/available-typed-arrays/
+[actions-image]: https://img.shields.io/endpoint?url=https://github-actions-badge-u3jn4tfpocch.runkit.sh/inspect-js/available-typed-arrays
+[actions-url]: https://github.com/inspect-js/available-typed-arrays/actions
