@@ -1,9 +1,7 @@
-support
+node_modules
+.DS_Store
+
+*.log
+
+test/tmp
 test
-examples
-example
-*.sock
-dist
-yarn.lock
-coverage
-bower.json
