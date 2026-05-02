@@ -1,51 +1,61 @@
-# ms
+# Brotli.js
 
-[![Build Status](https://travis-ci.org/zeit/ms.svg?branch=master)](https://travis-ci.org/zeit/ms)
-[![Slack Channel](http://zeit-slackin.now.sh/badge.svg)](https://zeit.chat/)
+Brotli.js is port of the [Brotli](http://tools.ietf.org/html/draft-alakuijala-brotli-01) compression algorithm (as used in the [WOFF2](http://www.w3.org/TR/WOFF2/) font format) to JavaScript. The decompressor is hand ported, and the compressor is ported
+with Emscripten.  The original C++ source code can be found [here](http://github.com/google/brotli).
 
-Use this package to easily convert various time formats to milliseconds.
+## Installation and usage
 
-## Examples
+Install using npm.
 
-```js
-ms('2 days')  // 172800000
-ms('1d')      // 86400000
-ms('10h')     // 36000000
-ms('2.5 hrs') // 9000000
-ms('2h')      // 7200000
-ms('1m')      // 60000
-ms('5s')      // 5000
-ms('1y')      // 31557600000
-ms('100')     // 100
+    npm install brotli
+
+If you want to use brotli in the browser, you should use [Browserify](http://browserify.org/) to build it.
+
+In node, or in browserify, you can load brotli in the standard way:
+
+```javascript
+var brotli = require('brotli');
 ```
 
-### Convert from milliseconds
+You can also require just the `decompress` function or just the `compress` function, which is useful for browserify builds.
+For example, here's how you'd require just the `decompress` function.
 
-```js
-ms(60000)             // "1m"
-ms(2 * 60000)         // "2m"
-ms(ms('10 hours'))    // "10h"
+```javascript
+var decompress = require('brotli/decompress');
 ```
 
-### Time format written-out
+## API
 
-```js
-ms(60000, { long: true })             // "1 minute"
-ms(2 * 60000, { long: true })         // "2 minutes"
-ms(ms('10 hours'), { long: true })    // "10 hours"
+### brotli.decompress(buffer, [outSize])
+
+Decompresses the given buffer to produce the original input to the compressor.
+The `outSize` parameter is optional, and will be computed by the decompressor
+if not provided. Inside a WOFF2 file, this can be computed from the WOFF2 directory.
+
+```javascript
+// decode a buffer where the output size is known
+brotli.decompress(compressedData, uncompressedLength);
+
+// decode a buffer where the output size is not known
+brotli.decompress(fs.readFileSync('compressed.bin'));
 ```
 
-## Features
+### brotli.compress(buffer, isText = false)
 
-- Works both in [node](https://nodejs.org) and in the browser.
-- If a number is supplied to `ms`, a string with a unit is returned.
-- If a string that contains the number is supplied, it returns it as a number (e.g.: it returns `100` for `'100'`).
-- If you pass a string with a number and a valid unit, the number of equivalent ms is returned.
+Compresses the given buffer. Pass optional parameters as the second argument.
 
-## Caught a bug?
+```javascript
+// encode a buffer of binary data
+brotli.compress(fs.readFileSync('myfile.bin'));
 
-1. [Fork](https://help.github.com/articles/fork-a-repo/) this repository to your own GitHub account and then [clone](https://help.github.com/articles/cloning-a-repository/) it to your local device
-2. Link the package to the global module directory: `npm link`
-3. Within the module you want to test your local development instance of ms, just link it to the dependencies: `npm link ms`. Instead of the default one from npm, node will now use your clone of ms!
+// encode some data with options (default options shown)
+brotli.compress(fs.readFileSync('myfile.bin'), {
+  mode: 0, // 0 = generic, 1 = text, 2 = font (WOFF2)
+  quality: 11, // 0 - 11
+  lgwin: 22 // window size
+});
+```
 
-As always, you can run the tests using: `npm test`
+## License
+
+MIT
