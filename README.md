@@ -1,40 +1,43 @@
-# array-buffer-byte-length <sup>[![Version Badge][npm-version-svg]][package-url]</sup>
+# Array Flatten
 
-[![github actions][actions-image]][actions-url]
-[![coverage][codecov-image]][codecov-url]
-[![License][license-image]][license-url]
-[![Downloads][downloads-image]][downloads-url]
+[![NPM version][npm-image]][npm-url]
+[![NPM downloads][downloads-image]][downloads-url]
+[![Build status][travis-image]][travis-url]
+[![Test coverage][coveralls-image]][coveralls-url]
 
-[![npm badge][npm-badge-png]][package-url]
+> Flatten an array of nested arrays into a single flat array. Accepts an optional depth.
 
-Get the byte length of an ArrayBuffer, even in engines without a `.byteLength` method.
+## Installation
 
-## Example
-
-```js
-const assert = require('assert');
-const byteLength = require('array-buffer-byte-length');
-
-assert.equal(byteLength([]), NaN, 'an array is not an ArrayBuffer, yields NaN');
-
-assert.equal(byteLength(new ArrayBuffer(0)), 0, 'ArrayBuffer of byteLength 0, yields 0');
+```
+npm install array-flatten --save
 ```
 
-## Tests
-Simply clone the repo, `npm install`, and run `npm test`
+## Usage
 
-[package-url]: https://npmjs.org/package/array-buffer-byte-length
-[npm-version-svg]: https://versionbadg.es/inspect-js/array-buffer-byte-length.svg
-[deps-svg]: https://david-dm.org/inspect-js/array-buffer-byte-length.svg
-[deps-url]: https://david-dm.org/inspect-js/array-buffer-byte-length
-[dev-deps-svg]: https://david-dm.org/inspect-js/array-buffer-byte-length/dev-status.svg
-[dev-deps-url]: https://david-dm.org/inspect-js/array-buffer-byte-length#info=devDependencies
-[npm-badge-png]: https://nodei.co/npm/array-buffer-byte-length.png?downloads=true&stars=true
-[license-image]: https://img.shields.io/npm/l/array-buffer-byte-length.svg
-[license-url]: LICENSE
-[downloads-image]: https://img.shields.io/npm/dm/array-buffer-byte-length.svg
-[downloads-url]: https://npm-stat.com/charts.html?package=array-buffer-byte-length
-[codecov-image]: https://codecov.io/gh/inspect-js/array-buffer-byte-length/branch/main/graphs/badge.svg
-[codecov-url]: https://app.codecov.io/gh/inspect-js/array-buffer-byte-length/
-[actions-image]: https://img.shields.io/endpoint?url=https://github-actions-badge-u3jn4tfpocch.runkit.sh/inspect-js/array-buffer-byte-length
-[actions-url]: https://github.com/inspect-js/array-buffer-byte-length/actions
+```javascript
+var flatten = require('array-flatten')
+
+flatten([1, [2, [3, [4, [5], 6], 7], 8], 9])
+//=> [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+flatten([1, [2, [3, [4, [5], 6], 7], 8], 9], 2)
+//=> [1, 2, 3, [4, [5], 6], 7, 8, 9]
+
+(function () {
+  flatten(arguments) //=> [1, 2, 3]
+})(1, [2, 3])
+```
+
+## License
+
+MIT
+
+[npm-image]: https://img.shields.io/npm/v/array-flatten.svg?style=flat
+[npm-url]: https://npmjs.org/package/array-flatten
+[downloads-image]: https://img.shields.io/npm/dm/array-flatten.svg?style=flat
+[downloads-url]: https://npmjs.org/package/array-flatten
+[travis-image]: https://img.shields.io/travis/blakeembrey/array-flatten.svg?style=flat
+[travis-url]: https://travis-ci.org/blakeembrey/array-flatten
+[coveralls-image]: https://img.shields.io/coveralls/blakeembrey/array-flatten.svg?style=flat
+[coveralls-url]: https://coveralls.io/r/blakeembrey/array-flatten?branch=master
