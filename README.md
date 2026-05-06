@@ -1,145 +1,142 @@
-# Console Control Strings
+# content-disposition
 
-A library of cross-platform tested terminal/console command strings for
-doing things like color and cursor positioning.  This is a subset of both
-ansi and vt100.  All control codes included work on both Windows & Unix-like
-OSes, except where noted.
+[![NPM Version][npm-image]][npm-url]
+[![NPM Downloads][downloads-image]][downloads-url]
+[![Node.js Version][node-version-image]][node-version-url]
+[![Build Status][github-actions-ci-image]][github-actions-ci-url]
+[![Test Coverage][coveralls-image]][coveralls-url]
 
-## Usage
+Create and parse HTTP `Content-Disposition` header
 
-```js
-var consoleControl = require('console-control-strings')
+## Installation
 
-console.log(consoleControl.color('blue','bgRed', 'bold') + 'hi there' + consoleControl.color('reset'))
-process.stdout.write(consoleControl.goto(75, 10))
+```sh
+$ npm install content-disposition
 ```
 
-## Why Another?
+## API
 
-There are tons of libraries similar to this one.  I wanted one that was:
+```js
+var contentDisposition = require('content-disposition')
+```
 
-1. Very clear about compatibility goals.
-2. Could emit, for instance, a start color code without an end one.
-3. Returned strings w/o writing to streams.
-4. Was not weighed down with other unrelated baggage.
+### contentDisposition(filename, options)
 
-## Functions
+Create an attachment `Content-Disposition` header value using the given file name,
+if supplied. The `filename` is optional and if no file name is desired, but you
+want to specify `options`, set `filename` to `undefined`.
 
-### var code = consoleControl.up(_num = 1_)
+```js
+res.setHeader('Content-Disposition', contentDisposition('∫ maths.pdf'))
+```
 
-Returns the escape sequence to move _num_ lines up.
+**note** HTTP headers are of the ISO-8859-1 character set. If you are writing this
+header through a means different from `setHeader` in Node.js, you'll want to specify
+the `'binary'` encoding in Node.js.
 
-### var code = consoleControl.down(_num = 1_)
+#### Options
 
-Returns the escape sequence to move _num_ lines down.
+`contentDisposition` accepts these properties in the options object.
 
-### var code = consoleControl.forward(_num = 1_)
+##### fallback
 
-Returns the escape sequence to move _num_ lines righ.
+If the `filename` option is outside ISO-8859-1, then the file name is actually
+stored in a supplemental field for clients that support Unicode file names and
+a ISO-8859-1 version of the file name is automatically generated.
 
-### var code = consoleControl.back(_num = 1_)
+This specifies the ISO-8859-1 file name to override the automatic generation or
+disables the generation all together, defaults to `true`.
 
-Returns the escape sequence to move _num_ lines left.
+  - A string will specify the ISO-8859-1 file name to use in place of automatic
+    generation.
+  - `false` will disable including a ISO-8859-1 file name and only include the
+    Unicode version (unless the file name is already ISO-8859-1).
+  - `true` will enable automatic generation if the file name is outside ISO-8859-1.
 
-### var code = consoleControl.nextLine(_num = 1_)
+If the `filename` option is ISO-8859-1 and this option is specified and has a
+different value, then the `filename` option is encoded in the extended field
+and this set as the fallback field, even though they are both ISO-8859-1.
 
-Returns the escape sequence to move _num_ lines down and to the beginning of
-the line.
+##### type
 
-### var code = consoleControl.previousLine(_num = 1_)
+Specifies the disposition type, defaults to `"attachment"`. This can also be
+`"inline"`, or any other value (all values except inline are treated like
+`attachment`, but can convey additional information if both parties agree to
+it). The type is normalized to lower-case.
 
-Returns the escape sequence to move _num_ lines up and to the beginning of
-the line.
+### contentDisposition.parse(string)
 
-### var code = consoleControl.eraseData()
+```js
+var disposition = contentDisposition.parse('attachment; filename="EURO rates.txt"; filename*=UTF-8\'\'%e2%82%ac%20rates.txt')
+```
 
-Returns the escape sequence to erase everything from the current cursor
-position to the bottom right of the screen.  This is line based, so it
-erases the remainder of the current line and all following lines.
+Parse a `Content-Disposition` header string. This automatically handles extended
+("Unicode") parameters by decoding them and providing them under the standard
+parameter name. This will return an object with the following properties (examples
+are shown for the string `'attachment; filename="EURO rates.txt"; filename*=UTF-8\'\'%e2%82%ac%20rates.txt'`):
 
-### var code = consoleControl.eraseLine()
+ - `type`: The disposition type (always lower case). Example: `'attachment'`
 
-Returns the escape sequence to erase to the end of the current line.
+ - `parameters`: An object of the parameters in the disposition (name of parameter
+   always lower case and extended versions replace non-extended versions). Example:
+   `{filename: "€ rates.txt"}`
 
-### var code = consoleControl.goto(_x_, _y_)
+## Examples
 
-Returns the escape sequence to move the cursor to the designated position. 
-Note that the origin is _1, 1_ not _0, 0_.
+### Send a file for download
 
-### var code = consoleControl.gotoSOL()
+```js
+var contentDisposition = require('content-disposition')
+var destroy = require('destroy')
+var fs = require('fs')
+var http = require('http')
+var onFinished = require('on-finished')
 
-Returns the escape sequence to move the cursor to the beginning of the
-current line. (That is, it returns a carriage return, `\r`.)
+var filePath = '/path/to/public/plans.pdf'
 
-### var code = consoleControl.beep()
+http.createServer(function onRequest (req, res) {
+  // set headers
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', contentDisposition(filePath))
 
-Returns the escape sequence to cause the termianl to beep.  (That is, it
-returns unicode character `\x0007`, a Control-G.)
+  // send file
+  var stream = fs.createReadStream(filePath)
+  stream.pipe(res)
+  onFinished(res, function () {
+    destroy(stream)
+  })
+})
+```
 
-### var code = consoleControl.hideCursor()
+## Testing
 
-Returns the escape sequence to hide the cursor.
+```sh
+$ npm test
+```
 
-### var code = consoleControl.showCursor()
+## References
 
-Returns the escape sequence to show the cursor.
+- [RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1][rfc-2616]
+- [RFC 5987: Character Set and Language Encoding for Hypertext Transfer Protocol (HTTP) Header Field Parameters][rfc-5987]
+- [RFC 6266: Use of the Content-Disposition Header Field in the Hypertext Transfer Protocol (HTTP)][rfc-6266]
+- [Test Cases for HTTP Content-Disposition header field (RFC 6266) and the Encodings defined in RFCs 2047, 2231 and 5987][tc-2231]
 
-### var code = consoleControl.color(_colors = []_)
+[rfc-2616]: https://tools.ietf.org/html/rfc2616
+[rfc-5987]: https://tools.ietf.org/html/rfc5987
+[rfc-6266]: https://tools.ietf.org/html/rfc6266
+[tc-2231]: http://greenbytes.de/tech/tc2231/
 
-### var code = consoleControl.color(_color1_, _color2_, _…_, _colorn_)
+## License
 
-Returns the escape sequence to set the current terminal display attributes
-(mostly colors).  Arguments can either be a list of attributes or an array
-of attributes.  The difference between passing in an array or list of colors
-and calling `.color` separately for each one, is that in the former case a
-single escape sequence will be produced where as in the latter each change
-will have its own distinct escape sequence.  Each attribute can be one of:
+[MIT](LICENSE)
 
-* Reset:
-  * **reset** – Reset all attributes to the terminal default.
-* Styles:
-  * **bold** – Display text as bold.  In some terminals this means using a
-    bold font, in others this means changing the color.  In some it means
-    both.
-  * **italic** – Display text as italic. This is not available in most Windows terminals.
-  * **underline** – Underline text. This is not available in most Windows Terminals.
-  * **inverse** – Invert the foreground and background colors.
-  * **stopBold** – Do not display text as bold.
-  * **stopItalic** – Do not display text as italic.
-  * **stopUnderline** – Do not underline text.
-  * **stopInverse** – Do not invert foreground and background.
-* Colors:
-  * **white**
-  * **black**
-  * **blue**
-  * **cyan**
-  * **green**
-  * **magenta**
-  * **red**
-  * **yellow**
-  * **grey** / **brightBlack**
-  * **brightRed**
-  * **brightGreen**
-  * **brightYellow**
-  * **brightBlue**
-  * **brightMagenta**
-  * **brightCyan**
-  * **brightWhite**
-* Background Colors:
-  * **bgWhite**
-  * **bgBlack**
-  * **bgBlue**
-  * **bgCyan**
-  * **bgGreen**
-  * **bgMagenta**
-  * **bgRed**
-  * **bgYellow**
-  * **bgGrey** / **bgBrightBlack**
-  * **bgBrightRed**
-  * **bgBrightGreen**
-  * **bgBrightYellow**
-  * **bgBrightBlue**
-  * **bgBrightMagenta**
-  * **bgBrightCyan**
-  * **bgBrightWhite**
-
+[npm-image]: https://img.shields.io/npm/v/content-disposition.svg
+[npm-url]: https://npmjs.org/package/content-disposition
+[node-version-image]: https://img.shields.io/node/v/content-disposition.svg
+[node-version-url]: https://nodejs.org/en/download
+[coveralls-image]: https://img.shields.io/coveralls/jshttp/content-disposition.svg
+[coveralls-url]: https://coveralls.io/r/jshttp/content-disposition?branch=master
+[downloads-image]: https://img.shields.io/npm/dm/content-disposition.svg
+[downloads-url]: https://npmjs.org/package/content-disposition
+[github-actions-ci-image]: https://img.shields.io/github/workflow/status/jshttp/content-disposition/ci/master?label=ci
+[github-actions-ci-url]: https://github.com/jshttp/content-disposition?query=workflow%3Aci
