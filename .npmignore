@@ -1,7 +1,2 @@
-node_modules
-.DS_Store
-
-*.log
-
-test/tmp
-test
+.*.sw[mnop]
+node_modules/
