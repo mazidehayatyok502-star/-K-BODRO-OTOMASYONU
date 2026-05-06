@@ -1,43 +1,27 @@
 {
-    "name" : "concat-map",
-    "description" : "concatenative mapdashery",
-    "version" : "0.0.1",
-    "repository" : {
-        "type" : "git",
-        "url" : "git://github.com/substack/node-concat-map.git"
-    },
-    "main" : "index.js",
-    "keywords" : [
-        "concat",
-        "concatMap",
-        "map",
-        "functional",
-        "higher-order"
-    ],
-    "directories" : {
-        "example" : "example",
-        "test" : "test"
-    },
-    "scripts" : {
-        "test" : "tape test/*.js"
-    },
-    "devDependencies" : {
-        "tape" : "~2.4.0"
-    },
-    "license" : "MIT",
-    "author" : {
-        "name" : "James Halliday",
-        "email" : "mail@substack.net",
-        "url" : "http://substack.net"
-    },
-    "testling" : {
-        "files" : "test/*.js",
-        "browsers" : {
-            "ie" : [ 6, 7, 8, 9 ],
-            "ff" : [ 3.5, 10, 15.0 ],
-            "chrome" : [ 10, 22 ],
-            "safari" : [ 5.1 ],
-            "opera" : [ 12 ]
-        }
-    }
+  "name": "console-control-strings",
+  "version": "1.1.0",
+  "description": "A library of cross-platform tested terminal/console command strings for doing things like color and cursor positioning.  This is a subset of both ansi and vt100.  All control codes included work on both Windows & Unix-like OSes, except where noted.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "standard && tap test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iarna/console-control-strings"
+  },
+  "keywords": [],
+  "author": "Rebecca Turner <me@re-becca.org> (http://re-becca.org/)",
+  "license": "ISC",
+  "files": [
+    "LICENSE",
+    "index.js"
+  ],
+  "devDependencies": {
+    "standard": "^7.1.2",
+    "tap": "^5.7.2"
+  }
 }
