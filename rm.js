@@ -1,11 +1,12 @@
 'use strict'
 
-const { rm } = require('fs/promises')
-const glob = require('./util/glob.js')
-const index = require('./entry-index')
-const memo = require('./memoization')
+const util = require('util')
+
+const index = require('./lib/entry-index')
+const memo = require('./lib/memoization')
 const path = require('path')
-const rmContent = require('./content/rm')
+const rimraf = util.promisify(require('rimraf'))
+const rmContent = require('./lib/content/rm')
 
 module.exports = entry
 module.exports.entry = entry
@@ -24,8 +25,7 @@ function content (cache, integrity) {
 
 module.exports.all = all
 
-async function all (cache) {
+function all (cache) {
   memo.clearMemoized()
-  const paths = await glob(path.join(cache, '*(content-*|index-*)'), { silent: true, nosort: true })
-  return Promise.all(paths.map((p) => rm(p, { recursive: true, force: true })))
+  return rimraf(path.join(cache, '*(content-*|index-*)'))
 }
