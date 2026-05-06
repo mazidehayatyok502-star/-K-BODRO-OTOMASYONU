@@ -1,170 +1,42 @@
-/*!
- * bytes
- * Copyright(c) 2012-2014 TJ Holowaychuk
- * Copyright(c) 2015 Jed Watson
- * MIT Licensed
- */
+'use strict'
 
-'use strict';
+const get = require('./get.js')
+const put = require('./put.js')
+const rm = require('./rm.js')
+const verify = require('./verify.js')
+const { clearMemoized } = require('./memoization.js')
+const tmp = require('./util/tmp.js')
+const index = require('./entry-index.js')
 
-/**
- * Module exports.
- * @public
- */
+module.exports.index = {}
+module.exports.index.compact = index.compact
+module.exports.index.insert = index.insert
 
-module.exports = bytes;
-module.exports.format = format;
-module.exports.parse = parse;
+module.exports.ls = index.ls
+module.exports.ls.stream = index.lsStream
 
-/**
- * Module variables.
- * @private
- */
+module.exports.get = get
+module.exports.get.byDigest = get.byDigest
+module.exports.get.stream = get.stream
+module.exports.get.stream.byDigest = get.stream.byDigest
+module.exports.get.copy = get.copy
+module.exports.get.copy.byDigest = get.copy.byDigest
+module.exports.get.info = get.info
+module.exports.get.hasContent = get.hasContent
 
-var formatThousandsRegExp = /\B(?=(\d{3})+(?!\d))/g;
+module.exports.put = put
+module.exports.put.stream = put.stream
 
-var formatDecimalsRegExp = /(?:\.0*|(\.[^0]+)0+)$/;
+module.exports.rm = rm.entry
+module.exports.rm.all = rm.all
+module.exports.rm.entry = module.exports.rm
+module.exports.rm.content = rm.content
 
-var map = {
-  b:  1,
-  kb: 1 << 10,
-  mb: 1 << 20,
-  gb: 1 << 30,
-  tb: Math.pow(1024, 4),
-  pb: Math.pow(1024, 5),
-};
+module.exports.clearMemoized = clearMemoized
 
-var parseRegExp = /^((-|\+)?(\d+(?:\.\d+)?)) *(kb|mb|gb|tb|pb)$/i;
+module.exports.tmp = {}
+module.exports.tmp.mkdir = tmp.mkdir
+module.exports.tmp.withTmp = tmp.withTmp
 
-/**
- * Convert the given value in bytes into a string or parse to string to an integer in bytes.
- *
- * @param {string|number} value
- * @param {{
- *  case: [string],
- *  decimalPlaces: [number]
- *  fixedDecimals: [boolean]
- *  thousandsSeparator: [string]
- *  unitSeparator: [string]
- *  }} [options] bytes options.
- *
- * @returns {string|number|null}
- */
-
-function bytes(value, options) {
-  if (typeof value === 'string') {
-    return parse(value);
-  }
-
-  if (typeof value === 'number') {
-    return format(value, options);
-  }
-
-  return null;
-}
-
-/**
- * Format the given value in bytes into a string.
- *
- * If the value is negative, it is kept as such. If it is a float,
- * it is rounded.
- *
- * @param {number} value
- * @param {object} [options]
- * @param {number} [options.decimalPlaces=2]
- * @param {number} [options.fixedDecimals=false]
- * @param {string} [options.thousandsSeparator=]
- * @param {string} [options.unit=]
- * @param {string} [options.unitSeparator=]
- *
- * @returns {string|null}
- * @public
- */
-
-function format(value, options) {
-  if (!Number.isFinite(value)) {
-    return null;
-  }
-
-  var mag = Math.abs(value);
-  var thousandsSeparator = (options && options.thousandsSeparator) || '';
-  var unitSeparator = (options && options.unitSeparator) || '';
-  var decimalPlaces = (options && options.decimalPlaces !== undefined) ? options.decimalPlaces : 2;
-  var fixedDecimals = Boolean(options && options.fixedDecimals);
-  var unit = (options && options.unit) || '';
-
-  if (!unit || !map[unit.toLowerCase()]) {
-    if (mag >= map.pb) {
-      unit = 'PB';
-    } else if (mag >= map.tb) {
-      unit = 'TB';
-    } else if (mag >= map.gb) {
-      unit = 'GB';
-    } else if (mag >= map.mb) {
-      unit = 'MB';
-    } else if (mag >= map.kb) {
-      unit = 'KB';
-    } else {
-      unit = 'B';
-    }
-  }
-
-  var val = value / map[unit.toLowerCase()];
-  var str = val.toFixed(decimalPlaces);
-
-  if (!fixedDecimals) {
-    str = str.replace(formatDecimalsRegExp, '$1');
-  }
-
-  if (thousandsSeparator) {
-    str = str.split('.').map(function (s, i) {
-      return i === 0
-        ? s.replace(formatThousandsRegExp, thousandsSeparator)
-        : s
-    }).join('.');
-  }
-
-  return str + unitSeparator + unit;
-}
-
-/**
- * Parse the string value into an integer in bytes.
- *
- * If no unit is given, it is assumed the value is in bytes.
- *
- * @param {number|string} val
- *
- * @returns {number|null}
- * @public
- */
-
-function parse(val) {
-  if (typeof val === 'number' && !isNaN(val)) {
-    return val;
-  }
-
-  if (typeof val !== 'string') {
-    return null;
-  }
-
-  // Test if the string passed is valid
-  var results = parseRegExp.exec(val);
-  var floatValue;
-  var unit = 'b';
-
-  if (!results) {
-    // Nothing could be extracted from the given string
-    floatValue = parseInt(val, 10);
-    unit = 'b'
-  } else {
-    // Retrieve the value and the unit
-    floatValue = parseFloat(results[1]);
-    unit = results[4].toLowerCase();
-  }
-
-  if (isNaN(floatValue)) {
-    return null;
-  }
-
-  return Math.floor(map[unit] * floatValue);
-}
+module.exports.verify = verify
+module.exports.verify.lastRun = verify.lastRun

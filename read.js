@@ -1,205 +1,244 @@
-/*!
- * body-parser
- * Copyright(c) 2014-2015 Douglas Christopher Wilson
- * MIT Licensed
- */
-
 'use strict'
 
-/**
- * Module dependencies.
- * @private
- */
+const util = require('util')
 
-var createError = require('http-errors')
-var destroy = require('destroy')
-var getBody = require('raw-body')
-var iconv = require('iconv-lite')
-var onFinished = require('on-finished')
-var unpipe = require('unpipe')
-var zlib = require('zlib')
+const fs = require('fs')
+const fsm = require('fs-minipass')
+const ssri = require('ssri')
+const contentPath = require('./path')
+const Pipeline = require('minipass-pipeline')
 
-/**
- * Module exports.
- */
+const lstat = util.promisify(fs.lstat)
+const readFile = util.promisify(fs.readFile)
 
 module.exports = read
 
-/**
- * Read a request into a buffer and parse.
- *
- * @param {object} req
- * @param {object} res
- * @param {function} next
- * @param {function} parse
- * @param {function} debug
- * @param {object} options
- * @private
- */
+const MAX_SINGLE_READ_SIZE = 64 * 1024 * 1024
+function read (cache, integrity, opts = {}) {
+  const { size } = opts
+  return withContentSri(cache, integrity, (cpath, sri) => {
+    // get size
+    return lstat(cpath).then(stat => ({ stat, cpath, sri }))
+  }).then(({ stat, cpath, sri }) => {
+    if (typeof size === 'number' && stat.size !== size)
+      throw sizeError(size, stat.size)
 
-function read (req, res, next, parse, debug, options) {
-  var length
-  var opts = options
-  var stream
+    if (stat.size > MAX_SINGLE_READ_SIZE)
+      return readPipeline(cpath, stat.size, sri, new Pipeline()).concat()
 
-  // flag as parsed
-  req._body = true
+    return readFile(cpath, null).then((data) => {
+      if (!ssri.checkData(data, sri))
+        throw integrityError(sri, cpath)
 
-  // read options
-  var encoding = opts.encoding !== null
-    ? opts.encoding
-    : null
-  var verify = opts.verify
-
-  try {
-    // get the content stream
-    stream = contentstream(req, debug, opts.inflate)
-    length = stream.length
-    stream.length = undefined
-  } catch (err) {
-    return next(err)
-  }
-
-  // set raw-body options
-  opts.length = length
-  opts.encoding = verify
-    ? null
-    : encoding
-
-  // assert charset is supported
-  if (opts.encoding === null && encoding !== null && !iconv.encodingExists(encoding)) {
-    return next(createError(415, 'unsupported charset "' + encoding.toUpperCase() + '"', {
-      charset: encoding.toLowerCase(),
-      type: 'charset.unsupported'
-    }))
-  }
-
-  // read body
-  debug('read body')
-  getBody(stream, opts, function (error, body) {
-    if (error) {
-      var _error
-
-      if (error.type === 'encoding.unsupported') {
-        // echo back charset
-        _error = createError(415, 'unsupported charset "' + encoding.toUpperCase() + '"', {
-          charset: encoding.toLowerCase(),
-          type: 'charset.unsupported'
-        })
-      } else {
-        // set status code on error
-        _error = createError(400, error)
-      }
-
-      // unpipe from stream and destroy
-      if (stream !== req) {
-        unpipe(req)
-        destroy(stream, true)
-      }
-
-      // read off entire request
-      dump(req, function onfinished () {
-        next(createError(400, _error))
-      })
-      return
-    }
-
-    // verify
-    if (verify) {
-      try {
-        debug('verify body')
-        verify(req, res, body, encoding)
-      } catch (err) {
-        next(createError(403, err, {
-          body: body,
-          type: err.type || 'entity.verify.failed'
-        }))
-        return
-      }
-    }
-
-    // parse
-    var str = body
-    try {
-      debug('parse body')
-      str = typeof body !== 'string' && encoding !== null
-        ? iconv.decode(body, encoding)
-        : body
-      req.body = parse(str)
-    } catch (err) {
-      next(createError(400, err, {
-        body: str,
-        type: err.type || 'entity.parse.failed'
-      }))
-      return
-    }
-
-    next()
+      return data
+    })
   })
 }
 
-/**
- * Get the content stream of the request.
- *
- * @param {object} req
- * @param {function} debug
- * @param {boolean} [inflate=true]
- * @return {object}
- * @api private
- */
-
-function contentstream (req, debug, inflate) {
-  var encoding = (req.headers['content-encoding'] || 'identity').toLowerCase()
-  var length = req.headers['content-length']
-  var stream
-
-  debug('content-encoding "%s"', encoding)
-
-  if (inflate === false && encoding !== 'identity') {
-    throw createError(415, 'content encoding unsupported', {
-      encoding: encoding,
-      type: 'encoding.unsupported'
+const readPipeline = (cpath, size, sri, stream) => {
+  stream.push(
+    new fsm.ReadStream(cpath, {
+      size,
+      readSize: MAX_SINGLE_READ_SIZE,
+    }),
+    ssri.integrityStream({
+      integrity: sri,
+      size,
     })
-  }
+  )
+  return stream
+}
 
-  switch (encoding) {
-    case 'deflate':
-      stream = zlib.createInflate()
-      debug('inflate body')
-      req.pipe(stream)
-      break
-    case 'gzip':
-      stream = zlib.createGunzip()
-      debug('gunzip body')
-      req.pipe(stream)
-      break
-    case 'identity':
-      stream = req
-      stream.length = length
-      break
-    default:
-      throw createError(415, 'unsupported content encoding "' + encoding + '"', {
-        encoding: encoding,
-        type: 'encoding.unsupported'
-      })
-  }
+module.exports.sync = readSync
+
+function readSync (cache, integrity, opts = {}) {
+  const { size } = opts
+  return withContentSriSync(cache, integrity, (cpath, sri) => {
+    const data = fs.readFileSync(cpath)
+    if (typeof size === 'number' && size !== data.length)
+      throw sizeError(size, data.length)
+
+    if (ssri.checkData(data, sri))
+      return data
+
+    throw integrityError(sri, cpath)
+  })
+}
+
+module.exports.stream = readStream
+module.exports.readStream = readStream
+
+function readStream (cache, integrity, opts = {}) {
+  const { size } = opts
+  const stream = new Pipeline()
+  withContentSri(cache, integrity, (cpath, sri) => {
+    // just lstat to ensure it exists
+    return lstat(cpath).then((stat) => ({ stat, cpath, sri }))
+  }).then(({ stat, cpath, sri }) => {
+    if (typeof size === 'number' && size !== stat.size)
+      return stream.emit('error', sizeError(size, stat.size))
+
+    readPipeline(cpath, stat.size, sri, stream)
+  }, er => stream.emit('error', er))
 
   return stream
 }
 
-/**
- * Dump the contents of a request.
- *
- * @param {object} req
- * @param {function} callback
- * @api private
- */
+let copyFile
+if (fs.copyFile) {
+  module.exports.copy = copy
+  module.exports.copy.sync = copySync
+  copyFile = util.promisify(fs.copyFile)
+}
 
-function dump (req, callback) {
-  if (onFinished.isFinished(req)) {
-    callback(null)
-  } else {
-    onFinished(req, callback)
-    req.resume()
+function copy (cache, integrity, dest) {
+  return withContentSri(cache, integrity, (cpath, sri) => {
+    return copyFile(cpath, dest)
+  })
+}
+
+function copySync (cache, integrity, dest) {
+  return withContentSriSync(cache, integrity, (cpath, sri) => {
+    return fs.copyFileSync(cpath, dest)
+  })
+}
+
+module.exports.hasContent = hasContent
+
+function hasContent (cache, integrity) {
+  if (!integrity)
+    return Promise.resolve(false)
+
+  return withContentSri(cache, integrity, (cpath, sri) => {
+    return lstat(cpath).then((stat) => ({ size: stat.size, sri, stat }))
+  }).catch((err) => {
+    if (err.code === 'ENOENT')
+      return false
+
+    if (err.code === 'EPERM') {
+      /* istanbul ignore else */
+      if (process.platform !== 'win32')
+        throw err
+      else
+        return false
+    }
+  })
+}
+
+module.exports.hasContent.sync = hasContentSync
+
+function hasContentSync (cache, integrity) {
+  if (!integrity)
+    return false
+
+  return withContentSriSync(cache, integrity, (cpath, sri) => {
+    try {
+      const stat = fs.lstatSync(cpath)
+      return { size: stat.size, sri, stat }
+    } catch (err) {
+      if (err.code === 'ENOENT')
+        return false
+
+      if (err.code === 'EPERM') {
+        /* istanbul ignore else */
+        if (process.platform !== 'win32')
+          throw err
+        else
+          return false
+      }
+    }
+  })
+}
+
+function withContentSri (cache, integrity, fn) {
+  const tryFn = () => {
+    const sri = ssri.parse(integrity)
+    // If `integrity` has multiple entries, pick the first digest
+    // with available local data.
+    const algo = sri.pickAlgorithm()
+    const digests = sri[algo]
+
+    if (digests.length <= 1) {
+      const cpath = contentPath(cache, digests[0])
+      return fn(cpath, digests[0])
+    } else {
+      // Can't use race here because a generic error can happen before
+      // a ENOENT error, and can happen before a valid result
+      return Promise
+        .all(digests.map((meta) => {
+          return withContentSri(cache, meta, fn)
+            .catch((err) => {
+              if (err.code === 'ENOENT') {
+                return Object.assign(
+                  new Error('No matching content found for ' + sri.toString()),
+                  { code: 'ENOENT' }
+                )
+              }
+              return err
+            })
+        }))
+        .then((results) => {
+          // Return the first non error if it is found
+          const result = results.find((r) => !(r instanceof Error))
+          if (result)
+            return result
+
+          // Throw the No matching content found error
+          const enoentError = results.find((r) => r.code === 'ENOENT')
+          if (enoentError)
+            throw enoentError
+
+          // Throw generic error
+          throw results.find((r) => r instanceof Error)
+        })
+    }
   }
+
+  return new Promise((resolve, reject) => {
+    try {
+      tryFn()
+        .then(resolve)
+        .catch(reject)
+    } catch (err) {
+      reject(err)
+    }
+  })
+}
+
+function withContentSriSync (cache, integrity, fn) {
+  const sri = ssri.parse(integrity)
+  // If `integrity` has multiple entries, pick the first digest
+  // with available local data.
+  const algo = sri.pickAlgorithm()
+  const digests = sri[algo]
+  if (digests.length <= 1) {
+    const cpath = contentPath(cache, digests[0])
+    return fn(cpath, digests[0])
+  } else {
+    let lastErr = null
+    for (const meta of digests) {
+      try {
+        return withContentSriSync(cache, meta, fn)
+      } catch (err) {
+        lastErr = err
+      }
+    }
+    throw lastErr
+  }
+}
+
+function sizeError (expected, found) {
+  const err = new Error(`Bad data size: expected inserted data to be ${expected} bytes, but got ${found} instead`)
+  err.expected = expected
+  err.found = found
+  err.code = 'EBADSIZE'
+  return err
+}
+
+function integrityError (sri, path) {
+  const err = new Error(`Integrity verification failed for ${sri} (${path})`)
+  err.code = 'EINTEGRITY'
+  err.sri = sri
+  err.path = path
+  return err
 }
