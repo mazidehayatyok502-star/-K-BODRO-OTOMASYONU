@@ -1,194 +1,129 @@
-# clone
-
-[![build status](https://secure.travis-ci.org/pvorb/clone.svg)](http://travis-ci.org/pvorb/clone) [![downloads](https://img.shields.io/npm/dt/clone.svg)](http://npm-stat.com/charts.html?package=clone)
-
-offers foolproof _deep cloning_ of objects, arrays, numbers, strings, maps,
-sets, promises, etc. in JavaScript.
-
-**XSS vulnerability detected**
-
-
-## Installation
-
-    npm install clone
-
-(It also works with browserify, ender or standalone. You may want to use the
-option `noParse` in browserify to reduce the resulting file size, since usually
-`Buffer`s are not needed in browsers.)
-
-
-## Example
-
-~~~ javascript
-var clone = require('clone');
-
-var a, b;
-
-a = { foo: { bar: 'baz' } };  // initial value of a
-
-b = clone(a);                 // clone a -> b
-a.foo.bar = 'foo';            // change a
-
-console.log(a);               // show a
-console.log(b);               // show b
-~~~
-
-This will print:
-
-~~~ javascript
-{ foo: { bar: 'foo' } }
-{ foo: { bar: 'baz' } }
-~~~
-
-**clone** masters cloning simple objects (even with custom prototype), arrays,
-Date objects, and RegExp objects. Everything is cloned recursively, so that you
-can clone dates in arrays in objects, for example.
-
-
-## API
-
-`clone(val, circular, depth)`
-
-  * `val` -- the value that you want to clone, any type allowed
-  * `circular` -- boolean
-
-    Call `clone` with `circular` set to `false` if you are certain that `obj`
-    contains no circular references. This will give better performance if
-    needed. There is no error if `undefined` or `null` is passed as `obj`.
-  * `depth` -- depth to which the object is to be cloned (optional,
-    defaults to infinity)
-  * `prototype` -- sets the prototype to be used when cloning an object.
-    (optional, defaults to parent prototype).
-  * `includeNonEnumerable` -- set to `true` if the non-enumerable properties
-    should be cloned as well. Non-enumerable properties on the prototype chain
-    will be ignored. (optional, defaults to `false`)
-
-`clone.clonePrototype(obj)`
-
-  * `obj` -- the object that you want to clone
-
-Does a prototype clone as
-[described by Oran Looney](http://oranlooney.com/functional-javascript/).
-
-
-## Circular References
-
-~~~ javascript
-var a, b;
-
-a = { hello: 'world' };
-
-a.myself = a;
-b = clone(a);
-
-console.log(b);
-~~~
-
-This will print:
-
-~~~ javascript
-{ hello: "world", myself: [Circular] }
-~~~
-
-So, `b.myself` points to `b`, not `a`. Neat!
-
-
-## Test
-
-    npm test
-
-
-## Changelog
-
-### v2.1.2
-
-#### 2018-03-21
-
-  - Use `Buffer.allocUnsafe()` on Node >= 4.5.0 (contributed by @ChALkeR)
-
-### v2.1.1
-
-#### 2017-03-09
-
-  - Fix build badge in README
-  - Add support for cloning Maps and Sets on Internet Explorer
-
-### v2.1.0
-
-#### 2016-11-22
-
-  - Add support for cloning Errors
-  - Exclude non-enumerable symbol-named object properties from cloning
-  - Add option to include non-enumerable own properties of objects
-
-### v2.0.0
-
-#### 2016-09-28
-
-  - Add support for cloning ES6 Maps, Sets, Promises, and Symbols
-
-### v1.0.3
-
-#### 2017-11-08
-
-  - Close XSS vulnerability in the NPM package, which included the file
-    `test-apart-ctx.html`. This vulnerability was disclosed by Juho Nurminen of
-    2NS - Second Nature Security.
-
-### v1.0.2 (deprecated)
-
-#### 2015-03-25
-
-  - Fix call on getRegExpFlags
-  - Refactor utilities
-  - Refactor test suite
-
-### v1.0.1 (deprecated)
-
-#### 2015-03-04
-
-  - Fix nodeunit version
-  - Directly call getRegExpFlags
-
-### v1.0.0 (deprecated)
-
-#### 2015-02-10
-
-  - Improve browser support
-  - Improve browser testability
-  - Move helper methods to private namespace
-
-## Caveat
-
-Some special objects like a socket or `process.stdout`/`stderr` are known to not
-be cloneable. If you find other objects that cannot be cloned, please [open an
-issue](https://github.com/pvorb/clone/issues/new).
-
-
-## Bugs and Issues
-
-If you encounter any bugs or issues, feel free to [open an issue at
-github](https://github.com/pvorb/clone/issues) or send me an email to
-<paul@vorba.ch>. I also always like to hear from you, if you’re using my code.
-
-## License
-
-Copyright © 2011-2016 [Paul Vorbach](https://paul.vorba.ch/) and
-[contributors](https://github.com/pvorb/clone/graphs/contributors).
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the “Software”), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# color-support
+
+A module which will endeavor to guess your terminal's level of color
+support.
+
+[![Build Status](https://travis-ci.org/isaacs/color-support.svg?branch=master)](https://travis-ci.org/isaacs/color-support) [![Coverage Status](https://coveralls.io/repos/github/isaacs/color-support/badge.svg?branch=master)](https://coveralls.io/github/isaacs/color-support?branch=master)
+
+This is similar to `supports-color`, but it does not read
+`process.argv`.
+
+1. If not in a node environment, not supported.
+
+2. If stdout is not a TTY, not supported, unless the `ignoreTTY`
+   option is set.
+
+3. If the `TERM` environ is `dumb`, not supported, unless the
+   `ignoreDumb` option is set.
+
+4. If on Windows, then support 16 colors.
+
+5. If using Tmux, then support 256 colors.
+
+7. Handle continuous-integration servers.  If `CI` or
+   `TEAMCITY_VERSION` are set in the environment, and `TRAVIS` is not
+   set, then color is not supported, unless `ignoreCI` option is set.
+
+6. Guess based on the `TERM_PROGRAM` environ.  These terminals support
+   16m colors:
+
+    - `iTerm.app` version 3.x supports 16m colors, below support 256
+    - `MacTerm` supports 16m colors
+    - `Apple_Terminal` supports 256 colors
+    - Have more things that belong on this list?  Send a PR!
+
+8. Make a guess based on the `TERM` environment variable.  Any
+   `xterm-256color` will get 256 colors.  Any screen, xterm, vt100,
+   color, ansi, cygwin, or linux `TERM` will get 16 colors.
+
+9. If `COLORTERM` environment variable is set, then support 16 colors.
+
+10. At this point, we assume that color is not supported.
+
+## USAGE
+
+```javascript
+var testColorSupport = require('color-support')
+var colorSupport = testColorSupport(/* options object */)
+
+if (!colorSupport) {
+  console.log('color is not supported')
+} else if (colorSupport.has16m) {
+  console.log('\x1b[38;2;102;194;255m16m colors\x1b[0m')
+} else if (colorSupport.has256) {
+  console.log('\x1b[38;5;119m256 colors\x1b[0m')
+} else if (colorSupport.hasBasic) {
+  console.log('\x1b[31mbasic colors\x1b[0m')
+} else {
+  console.log('this is impossible, but colors are not supported')
+}
+```
+
+If you don't have any options to set, you can also just look at the
+flags which will all be set on the test function itself.  (Of course,
+this doesn't return a falsey value when colors aren't supported, and
+doesn't allow you to set options.)
+
+```javascript
+var colorSupport = require('color-support')
+
+if (colorSupport.has16m) {
+  console.log('\x1b[38;2;102;194;255m16m colors\x1b[0m')
+} else if (colorSupport.has256) {
+  console.log('\x1b[38;5;119m256 colors\x1b[0m')
+} else if (colorSupport.hasBasic) {
+  console.log('\x1b[31mbasic colors\x1b[0m')
+} else {
+  console.log('colors are not supported')
+}
+```
+
+## Options
+
+You can pass in the following options.
+
+* ignoreTTY - default false.  Ignore the `isTTY` check.
+* ignoreDumb - default false.  Ignore `TERM=dumb` environ check.
+* ignoreCI - default false.  Ignore `CI` environ check.
+* env - Object for environment vars. Defaults to `process.env`.
+* stream - Stream for `isTTY` check. Defaults to `process.stdout`.
+* term - String for `TERM` checking. Defaults to `env.TERM`.
+* alwaysReturn - default false.  Return an object when colors aren't
+  supported (instead of returning `false`).
+* level - A number from 0 to 3.  This will return a result for the
+  specified level.  This is useful if you want to be able to set the
+  color support level explicitly as a number in an environment
+  variable or config, but then use the object flags in your program.
+  Except for `alwaysReturn` to return an object for level 0, all other
+  options are ignored, since no checking is done if a level is
+  explicitly set.
+
+## Return Value
+
+If no color support is available, then `false` is returned by default,
+unless the `alwaysReturn` flag is set to `true`.  This is so that the
+simple question of "can I use colors or not" can treat any truthy
+return as "yes".
+
+Otherwise, the return object has the following fields:
+
+* `level` - A number from 0 to 3
+    * `0` - No color support
+    * `1` - Basic (16) color support
+    * `2` - 256 color support
+    * `3` - 16 million (true) color support
+* `hasBasic` - Boolean
+* `has256` - Boolean
+* `has16m` - Boolean
+
+## CLI
+
+You can run the `color-support` bin from the command line which will
+just dump the values as this module calculates them in whatever env
+it's run.  It takes no command line arguments.
+
+## Credits
+
+This is a spiritual, if not actual, fork of
+[supports-color](http://npm.im/supports-color) by the ever prolific
+[Sindre Sorhus](http://npm.im/~sindresorhus).
