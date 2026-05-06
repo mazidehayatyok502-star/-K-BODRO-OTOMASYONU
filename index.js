@@ -1,85 +1,40 @@
-import fs from 'node:fs';
-import path from 'node:path';
-const lchownSync = (path, uid, gid) => {
-    try {
-        return fs.lchownSync(path, uid, gid);
-    }
-    catch (er) {
-        if (er?.code !== 'ENOENT')
-            throw er;
-    }
+'use strict';
+const os = require('os');
+
+const extractPathRegex = /\s+at.*(?:\(|\s)(.*)\)?/;
+const pathRegex = /^(?:(?:(?:node|(?:internal\/[\w/]*|.*node_modules\/(?:babel-polyfill|pirates)\/.*)?\w+)\.js:\d+:\d+)|native)/;
+const homeDir = typeof os.homedir === 'undefined' ? '' : os.homedir();
+
+module.exports = (stack, options) => {
+	options = Object.assign({pretty: false}, options);
+
+	return stack.replace(/\\/g, '/')
+		.split('\n')
+		.filter(line => {
+			const pathMatches = line.match(extractPathRegex);
+			if (pathMatches === null || !pathMatches[1]) {
+				return true;
+			}
+
+			const match = pathMatches[1];
+
+			// Electron
+			if (
+				match.includes('.app/Contents/Resources/electron.asar') ||
+				match.includes('.app/Contents/Resources/default_app.asar')
+			) {
+				return false;
+			}
+
+			return !pathRegex.test(match);
+		})
+		.filter(line => line.trim() !== '')
+		.map(line => {
+			if (options.pretty) {
+				return line.replace(extractPathRegex, (m, p1) => m.replace(p1, p1.replace(homeDir, '~')));
+			}
+
+			return line;
+		})
+		.join('\n');
 };
-const chown = (cpath, uid, gid, cb) => {
-    fs.lchown(cpath, uid, gid, er => {
-        // Skip ENOENT error
-        cb(er && er?.code !== 'ENOENT' ? er : null);
-    });
-};
-const chownrKid = (p, child, uid, gid, cb) => {
-    if (child.isDirectory()) {
-        chownr(path.resolve(p, child.name), uid, gid, (er) => {
-            if (er)
-                return cb(er);
-            const cpath = path.resolve(p, child.name);
-            chown(cpath, uid, gid, cb);
-        });
-    }
-    else {
-        const cpath = path.resolve(p, child.name);
-        chown(cpath, uid, gid, cb);
-    }
-};
-export const chownr = (p, uid, gid, cb) => {
-    fs.readdir(p, { withFileTypes: true }, (er, children) => {
-        // any error other than ENOTDIR or ENOTSUP means it's not readable,
-        // or doesn't exist.  give up.
-        if (er) {
-            if (er.code === 'ENOENT')
-                return cb();
-            else if (er.code !== 'ENOTDIR' && er.code !== 'ENOTSUP')
-                return cb(er);
-        }
-        if (er || !children.length)
-            return chown(p, uid, gid, cb);
-        let len = children.length;
-        let errState = null;
-        const then = (er) => {
-            /* c8 ignore start */
-            if (errState)
-                return;
-            /* c8 ignore stop */
-            if (er)
-                return cb((errState = er));
-            if (--len === 0)
-                return chown(p, uid, gid, cb);
-        };
-        for (const child of children) {
-            chownrKid(p, child, uid, gid, then);
-        }
-    });
-};
-const chownrKidSync = (p, child, uid, gid) => {
-    if (child.isDirectory())
-        chownrSync(path.resolve(p, child.name), uid, gid);
-    lchownSync(path.resolve(p, child.name), uid, gid);
-};
-export const chownrSync = (p, uid, gid) => {
-    let children;
-    try {
-        children = fs.readdirSync(p, { withFileTypes: true });
-    }
-    catch (er) {
-        const e = er;
-        if (e?.code === 'ENOENT')
-            return;
-        else if (e?.code === 'ENOTDIR' || e?.code === 'ENOTSUP')
-            return lchownSync(p, uid, gid);
-        else
-            throw e;
-    }
-    for (const child of children) {
-        chownrKidSync(p, child, uid, gid);
-    }
-    return lchownSync(p, uid, gid);
-};
-//# sourceMappingURL=index.js.map

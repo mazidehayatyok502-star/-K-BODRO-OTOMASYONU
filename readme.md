@@ -1,61 +1,76 @@
-# Brotli.js
+# clean-stack [![Build Status](https://travis-ci.org/sindresorhus/clean-stack.svg?branch=master)](https://travis-ci.org/sindresorhus/clean-stack)
 
-Brotli.js is port of the [Brotli](http://tools.ietf.org/html/draft-alakuijala-brotli-01) compression algorithm (as used in the [WOFF2](http://www.w3.org/TR/WOFF2/) font format) to JavaScript. The decompressor is hand ported, and the compressor is ported
-with Emscripten.  The original C++ source code can be found [here](http://github.com/google/brotli).
+> Clean up error stack traces
 
-## Installation and usage
+Removes the mostly unhelpful internal Node.js entries.
 
-Install using npm.
+Also works in Electron.
 
-    npm install brotli
 
-If you want to use brotli in the browser, you should use [Browserify](http://browserify.org/) to build it.
+## Install
 
-In node, or in browserify, you can load brotli in the standard way:
-
-```javascript
-var brotli = require('brotli');
+```
+$ npm install clean-stack
 ```
 
-You can also require just the `decompress` function or just the `compress` function, which is useful for browserify builds.
-For example, here's how you'd require just the `decompress` function.
 
-```javascript
-var decompress = require('brotli/decompress');
+## Usage
+
+```js
+const cleanStack = require('clean-stack');
+
+const error = new Error('Missing unicorn');
+
+console.log(error.stack);
+/*
+Error: Missing unicorn
+    at Object.<anonymous> (/Users/sindresorhus/dev/clean-stack/unicorn.js:2:15)
+    at Module._compile (module.js:409:26)
+    at Object.Module._extensions..js (module.js:416:10)
+    at Module.load (module.js:343:32)
+    at Function.Module._load (module.js:300:12)
+    at Function.Module.runMain (module.js:441:10)
+    at startup (node.js:139:18)
+*/
+
+console.log(cleanStack(error.stack));
+/*
+Error: Missing unicorn
+    at Object.<anonymous> (/Users/sindresorhus/dev/clean-stack/unicorn.js:2:15)
+*/
 ```
+
 
 ## API
 
-### brotli.decompress(buffer, [outSize])
+### cleanStack(stack, [options])
 
-Decompresses the given buffer to produce the original input to the compressor.
-The `outSize` parameter is optional, and will be computed by the decompressor
-if not provided. Inside a WOFF2 file, this can be computed from the WOFF2 directory.
+#### stack
 
-```javascript
-// decode a buffer where the output size is known
-brotli.decompress(compressedData, uncompressedLength);
+Type: `string`
 
-// decode a buffer where the output size is not known
-brotli.decompress(fs.readFileSync('compressed.bin'));
-```
+The `stack` property of an `Error`.
 
-### brotli.compress(buffer, isText = false)
+#### options
 
-Compresses the given buffer. Pass optional parameters as the second argument.
+Type: `Object`
 
-```javascript
-// encode a buffer of binary data
-brotli.compress(fs.readFileSync('myfile.bin'));
+##### pretty
 
-// encode some data with options (default options shown)
-brotli.compress(fs.readFileSync('myfile.bin'), {
-  mode: 0, // 0 = generic, 1 = text, 2 = font (WOFF2)
-  quality: 11, // 0 - 11
-  lgwin: 22 // window size
-});
-```
+Type: `boolean`<br>
+Default: `false`
+
+Prettify the file paths in the stack:
+
+`/Users/sindresorhus/dev/clean-stack/unicorn.js:2:15` → `~/dev/clean-stack/unicorn.js:2:15`
+
+
+## Related
+
+- [extrack-stack](https://github.com/sindresorhus/extract-stack) - Extract the actual stack of an error
+- [stack-utils](https://github.com/tapjs/stack-utils) - Captures and cleans stack traces
+
 
 ## License
 
-MIT
+MIT © [Sindre Sorhus](https://sindresorhus.com)
